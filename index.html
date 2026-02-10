@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>校园墙</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;font-family:"Microsoft YaHei",sans-serif;}
+  body{background:#f5f7fa;color:#222;}
+  .container{max-width:700px;margin:0 auto;padding:15px;}
+
+  .nav{
+    background:#fff;border-radius:12px;padding:12px 15px;
+    display:flex;justify-content:space-between;align-items:center;
+    margin-bottom:15px;box-shadow:0 2px 8px rgba(0,0,0,0.05);
+  }
+  .nav h1{font-size:18px;color:#409eff;}
+  .nav .tabs{display:flex;gap:10px;}
+  .nav button{
+    background:none;border:none;padding:6px 10px;
+    border-radius:8px;cursor:pointer;font-size:14px;
+  }
+  .nav button.active{background:#409eff;color:#fff;}
+
+  .card{
+    background:#fff;border-radius:12px;padding:15px;
+    margin-bottom:12px;box-shadow:0 2px 6px rgba(0,0,0,0.05);
+  }
+  .title{font-size:16px;margin-bottom:10px;font-weight:bold;}
+
+  input,textarea{
+    width:100%;border:1px solid #ddd;
+    border-radius:8px;padding:10px;margin-top:8px;
+  }
+  textarea{height:100px;resize:none;}
+  .btn{
+    width:100%;background:#409eff;color:#fff;
+    border:none;border-radius:8px;padding:10px;margin-top:10px;cursor:pointer;
+  }
+  .btn.sm{padding:6px 8px;font-size:12px;width:auto;}
+  .btn.danger{background:#f56c6c;}
+  .btn.success{background:#67c23a;}
+  .btn.warn{background:#ff9800;}
+  .link{
+    color:#409eff;cursor:pointer;font-size:14px;margin-top:8px;text-align:center;
+  }
+
+  .post{
+    border-left:3px solid #409eff;padding-left:12px;
+    margin-bottom:15px;padding-bottom:10px;border-bottom:1px solid #eee;
+  }
+  .post .user{font-weight:bold;font-size:14px;margin-bottom:4px;}
+  .post .content{font-size:14px;line-height:1.5;margin:6px 0;}
+  .post .time{font-size:12px;color:#999;margin-bottom:6px;}
+
+  .page{display:none;}
+  .page.active{display:block;}
+
+  .admin-box{display:none;margin-top:15px;border-top:1px solid #ff9800;padding-top:15px;}
+  .wait-item{padding:10px;border:1px solid #eee;border-radius:8px;margin-bottom:8px;}
+  .info-item{margin:6px 0;font-size:14px;}
+
+  .notice{
+    background:#fff3cd;color:#85640d;padding:10px 15px;
+    border-radius:8px;margin-bottom:10px;border:1px solid #ffeeba;
+  }
+
+  .chat-item{padding:8px 12px;background:#f1f3f5;border-radius:8px;margin-bottom:8px;cursor:pointer;}
+  .msg-me{text-align:right;background:#d1e7dd;margin-left:40px;}
+  .msg-you{text-align:left;background:#f1f3f5;margin-right:40px;}
+  .msg-box{height:300px;overflow-y:auto;padding:10px;border:1px solid #eee;border-radius:8px;margin-bottom:10px;}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="nav">
+    <h1>🏫 校园墙</h1>
+    <div class="tabs">
+      <button onclick="goPage('home')" class="active">首页</button>
+      <button onclick="goPublish()">我要投稿</button>
+      <button onclick="goPage('chat')">私信</button>
+      <button onclick="goPage('user')">个人中心</button>
+    </div>
+  </div>
+
+  <!-- 首页 -->
+  <div id="home" class="page active">
+    <div id="notice" class="notice">加载中...</div>
+    <div class="card">
+      <div class="title">校园投稿</div>
+      <div id="postList"></div>
+    </div>
+  </div>
+
+  <!-- 我要投稿 -->
+  <div id="publish" class="page">
+    <div class="card">
+      <div class="title">发布投稿</div>
+      <textarea id="content" placeholder="写下你想发布的内容..."></textarea>
+      <button class="btn" onclick="publish()">提交投稿（需审核）</button>
+    </div>
+  </div>
+
+  <!-- 私信 -->
+  <div id="chat" class="page">
+    <div class="card">
+      <div class="title">关注列表</div>
+      <div id="followList"></div>
+    </div>
+    <div class="card" id="chatBox" style="display:none;">
+      <div class="title" id="chatTo">聊天</div>
+      <div class="msg-box" id="msgBox"></div>
+      <input id="msgInput" placeholder="输入消息...">
+      <button class="btn" onclick="sendMsg()">发送</button>
+    </div>
+  </div>
+
+  <!-- 个人中心 -->
+  <div id="user" class="page">
+    <div class="card" id="loginCard">
+      <div class="title">账号登录</div>
+      <input id="login_user" placeholder="用户名">
+      <input id="login_pwd" type="password" placeholder="密码">
+      <button class="btn" onclick="login()">登录</button>
+      <div class="link" onclick="goFindPwd()">忘记密码？找回密码</div>
+    </div>
+
+    <div class="card" id="findCard" style="display:none;">
+      <div class="title">找回密码</div>
+      <input id="find_user" placeholder="用户名">
+      <input id="find_email" placeholder="注册时的邮箱">
+      <button class="btn warn" onclick="findPwd()">验证并显示密码</button>
+      <div class="link" onclick="goLogin()">返回登录</div>
+    </div>
+
+    <div class="card" id="regCard">
+      <div class="title">注册账号（必填邀请码+邮箱）</div>
+      <input id="reg_user" placeholder="用户名（必填）">
+      <input id="reg_pwd" type="password" placeholder="密码（必填）">
+      <input id="reg_wechat" placeholder="微信号">
+      <input id="reg_email" placeholder="邮箱（必填）">
+      <input id="reg_invite" placeholder="邀请码（必填）">
+      <button class="btn success" onclick="register()">注册</button>
+    </div>
+
+    <div class="card" id="userInfo" style="display:none;">
+      <div class="title">个人信息</div>
+      <div id="infoDisplay"></div>
+
+      <div style="margin-top:15px;">
+        <div class="title">修改密码</div>
+        <input id="old_pwd" placeholder="旧密码">
+        <input id="new_pwd" placeholder="新密码">
+        <button class="btn success" onclick="changePwd()">确认修改</button>
+      </div>
+
+      <button class="btn danger" onclick="logout()" style="margin-top:12px;">退出登录</button>
+
+      <div class="admin-box" id="adminPanel">
+        <div class="title">🔧 管理后台</div>
+        <input id="noticeInput" placeholder="发布公告">
+        <button class="btn warn" onclick="setNotice()">发布公告</button>
+        <div class="title" style="margin-top:15px;">待审核投稿</div>
+        <div id="waitPosts"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ================= 配置 =================
+const INVITE_CODE = "123456";
+const ADMIN_USER = "admin";
+
+// ================= 数据 =================
+function db() {
+  return JSON.parse(localStorage.getItem("wall") || `{
+    "users":[{"user":"admin","pwd":"admin123","wechat":"admin","email":"admin@qq.com"}],
+    "posts":[], "wait":[], "notice":"欢迎来到校园墙！",
+    "follows":{}, "chats":{}
+  }`);
+}
+function save(d) { localStorage.setItem("wall", JSON.stringify(d)); }
+
+let nowUser = localStorage.getItem("nowUser") || null;
+let chatTarget = null;
+
+// ================= 页面 =================
+function goPage(name) {
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.getElementById(name).classList.add("active");
+  document.querySelectorAll(".nav button").forEach(b=>b.classList.remove("active"));
+  if(event?.target) event.target.classList.add("active");
+  if(name==="chat") renderChatList();
+}
+function goPublish() {
+  if(!nowUser){alert("请先登录！");goPage("user");return;}
+  goPage("publish");
+}
+function goLogin(){
+  document.getElementById("loginCard").style.display="block";
+  document.getElementById("findCard").style.display="none";
+}
+function goFindPwd(){
+  document.getElementById("loginCard").style.display="none";
+  document.getElementById("findCard").style.display="block";
+}
+
+// ================= 公告 =================
+function showNotice(){
+  const d=db();
+  document.getElementById("notice").innerText = "📢 " + d.notice;
+}
+function setNotice(){
+  const val=document.getElementById("noticeInput").value.trim();
+  if(!val)return;
+  const d=db();
+  d.notice=val;
+  save(d);
+  showNotice();
+  alert("公告发布成功");
+}
+
+// ================= 注册 =================
+function register(){
+  const user=document.getElementById("reg_user").value.trim();
+  const pwd=document.getElementById("reg_pwd").value.trim();
+  const wechat=document.getElementById("reg_wechat").value.trim();
+  const email=document.getElementById("reg_email").value.trim();
+  const code=document.getElementById("reg_invite").value.trim();
+  if(!user||!pwd||!email||!code){alert("必填项不能为空");return;}
+  if(code!==INVITE_CODE){alert("邀请码错误");return;}
+  const d=db();
+  if(d.users.find(u=>u.user===user)){alert("用户名已存在");return;}
+  if(d.users.find(u=>u.email===email)){alert("邮箱已被注册");return;}
+  d.users.push({user,pwd,wechat,email});
+  d.follows[user]=[];
+  save(d);
+  alert("注册成功");
+  goLogin();
+}
+
+// ================= 登录 =================
+function login(){
+  const user=document.getElementById("login_user").value.trim();
+  const pwd=document.getElementById("login_pwd").value.trim();
+  const d=db();
+  const u=d.users.find(x=>x.user===user&&x.pwd===pwd);
+  if(!u){alert("账号或密码错误");return;}
+  nowUser=user;
+  localStorage.setItem("nowUser",user);
+  renderUser();
+  alert("登录成功");
+}
+
+// ================= 找回密码 =================
+function findPwd(){
+  const user=document.getElementById("find_user").value.trim();
+  const email=document.getElementById("find_email").value.trim();
+  const d=db();
+  const u=d.users.find(x=>x.user===user&&x.email===email);
+  if(!u){alert("信息不匹配");return;}
+  alert("你的密码："+u.pwd);
+  goLogin();
+}
+
+// ================= 修改密码 =================
+function changePwd(){
+  const old=document.getElementById("old_pwd").value.trim();
+  const newP=document.getElementById("new_pwd").value.trim();
+  if(!old||!newP){alert("请填写完整");return;}
+  const d=db();
+  const u=d.users.find(x=>x.user===nowUser);
+  if(u.pwd!==old){alert("旧密码错误");return;}
+  u.pwd=newP;
+  save(d);
+  alert("修改成功");
+  document.getElementById("old_pwd").value="";
+  document.getElementById("new_pwd").value="";
+}
+
+// ================= 关注 & 私信 =================
+function follow(user){
+  if(user===nowUser)return;
+  const d=db();
+  if(!d.follows[nowUser])d.follows[nowUser]=[];
+  if(!d.follows[nowUser].includes(user))d.follows[nowUser].push(user);
+  save(d);
+  alert("已关注");
+}
+function isMutual(user){
+  const d=db();
+  return d.follows[nowUser]?.includes(user) && d.follows[user]?.includes(nowUser);
+}
+function renderChatList(){
+  if(!nowUser)return;
+  const d=db();
+  const list=d.users.filter(u=>u.user!==nowUser);
+  let html="";
+  list.forEach(u=>{
+    const mut=isMutual(u.user);
+    html+=`
+    <div class="chat-item" onclick="${mut?'openChat(`'+u.user+'`)':'follow(`'+u.user+'`)'}">
+      ${u.user} ${mut?'(互关可私聊)':'(点击关注)'}
+    </div>`;
+  });
+  document.getElementById("followList").innerHTML=html;
+}
+function openChat(user){
+  chatTarget=user;
+  document.getElementById("chatTo").innerText="和 "+user+" 聊天";
+  document.getElementById("chatBox").style.display="block";
+  renderMsg();
+}
+function sendMsg(){
+  if(!chatTarget||!nowUser)return;
+  const txt=document.getElementById("msgInput").value.trim();
+  if(!txt)return;
+  const d=db();
+  const key=[nowUser,chatTarget].sort().join("_");
+  if(!d.chats[key])d.chats[key]=[];
+  d.chats[key].push({from:nowUser,to:chatTarget,msg:txt,time:new Date().toLocaleString()});
+  save(d);
+  document.getElementById("msgInput").value="";
+  renderMsg();
+}
+function renderMsg(){
+  const d=db();
+  const key=[nowUser,chatTarget].sort().join("_");
+  const list=d.chats[key]||[];
+  let html="";
+  list.forEach(m=>{
+    html+=`<div class="${m.from===nowUser?'msg-me':'msg-you'}">${m.msg}</div>`;
+  });
+  document.getElementById("msgBox").innerHTML=html;
+  document.getElementById("msgBox").scrollTop=9999;
+}
+
+// ================= 退出 =================
+function logout(){
+  nowUser=null;
+  localStorage.removeItem("nowUser");
+  renderUser();
+}
+
+// ================= 渲染个人中心 =================
+function renderUser(){
+  if(nowUser){
+    document.getElementById("loginCard").style.display="none";
+    document.getElementById("regCard").style.display="none";
+    document.getElementById("userInfo").style.display="block";
+    const d=db();
+    const u=d.users.find(x=>x.user===nowUser);
+    document.getElementById("infoDisplay").innerHTML=`
+      <div class="info-item">用户：${u.user}</div>
+      <div class="info-item">微信：${u.wechat||'未填'}</div>
+      <div class="info-item">邮箱：${u.email}</div>`;
+    document.getElementById("adminPanel").style.display=nowUser===ADMIN_USER?"block":"none";
+    renderWait();
+  }else{
+    document.getElementById("loginCard").style.display="block";
+    document.getElementById("regCard").style.display="block";
+    document.getElementById("userInfo").style.display="none";
+  }
+}
+
+// ================= 投稿 =================
+function publish(){
+  if(!nowUser){alert("请先登录");goPage("user");return;}
+  const c=document.getElementById("content").value.trim();
+  if(!c)return;
+  const d=db();
+  d.wait.push({user:nowUser,content:c,time:new Date().toLocaleString()});
+  save(d);
+  document.getElementById("content").value="";
+  alert("已提交审核");
+}
+function renderWait(){
+  const d=db();
+  let html="";
+  d.wait.forEach((it,i)=>{
+    html+=`
+    <div class="wait-item">
+      <div>${it.user}</div><div>${it.content}</div>
+      <button class="btn sm success" onclick="pass(${i})">通过</button>
+      <button class="btn sm danger" onclick="delWait(${i})">删除</button>
+    </div>`;
+  });
+  document.getElementById("waitPosts").innerHTML=html;
+  renderHome();
+}
+function pass(i){
+  const d=db();
+  d.posts.unshift(d.wait.splice(i,1)[0]);
+  save(d);
+  renderWait();
+}
+function delWait(i){
+  const d=db();
+  d.wait.splice(i,1);
+  save(d);
+  renderWait();
+}
+function renderHome(){
+  const d=db();
+  let html="";
+  d.posts.forEach(p=>{
+    html+=`<div class="post"><div class="user">${p.user}</div>
+    <div class="content">${p.content}</div><div class="time">${p.time}</div></div>`;
+  });
+  document.getElementById("postList").innerHTML=html||"<div>暂无投稿</div>";
+}
+
+// ================= 启动 =================
+window.onload=function(){
+  showNotice();
+  renderHome();
+  renderUser();
+};
+</script>
+</body>
+</html>
